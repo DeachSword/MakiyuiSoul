@@ -1,0 +1,26 @@
+[daten]
+host_addr = "localhost"
+host_port = 8765
+game_url = "makiyuisoul.deachsword.com:443/test_game" # v0.10.274開始未使用, 需要自行補丁客戶端
+auto_create_account = true
+
+[database]
+query_url = "mongodb://localhost:27017"
+db_name = "MakiyuiSoul"
+
+[game]
+
+### CHARACTER
+init_characters = [200001, 200002]  # 初始的角色列表
+init_character_id = 200001  # 初始的角色
+unlock_all_characters = true
+unlock_all_skins = true
+
+### ACTIVITY
+unlock_all_activitys = false
+
+[[game.add_activitys]]
+activity_id = 230831
+start_time = 0
+end_time = 1794452767
+_type = "daily_sign"
