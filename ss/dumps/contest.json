@@ -1,1 +1,8 @@
-{"contest": [{"id": "contest_create_price", "int_value": 60}]}
+{
+    "contest": [
+        {
+            "id": "contest_create_price",
+            "int_value": 60
+        }
+    ]
+}

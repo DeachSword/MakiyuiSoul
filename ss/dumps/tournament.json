@@ -1,1 +1,9 @@
-{"tournaments": [{"id": 1, "name": "\u7eff\u5bab\u6167\u592a\u676f", "game_ticket_id": 301001}]}
+{
+    "tournaments": [
+        {
+            "id": 1,
+            "name": "\u7eff\u5bab\u6167\u592a\u676f",
+            "game_ticket_id": 301001
+        }
+    ]
+}
