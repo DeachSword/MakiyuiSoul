@@ -1115,6 +1115,18 @@
             "path": "audio/audio_mj/effect_liqi_23llx",
             "time_length": 0,
             "type": "effect"
+        },
+        {
+            "id": 308031,
+            "path": "audio/audio_mj/ron_23yly",
+            "time_length": 0,
+            "type": "effect"
+        },
+        {
+            "id": 308032,
+            "path": "audio/audio_mj/effect_liqi_23yly",
+            "time_length": 0,
+            "type": "effect"
         }
     ],
     "bgm": [
@@ -1354,7 +1366,7 @@
         },
         {
             "id": 30610001,
-            "auto_hide": 0,
+            "auto_hide": 1,
             "name_chs": "\u4e00\u5343\u96f6\u4e00\u591c",
             "name_chs_t": "\u4e00\u5343\u96f6\u4e00\u591c",
             "name_jp": "\u5343\u591c\u4e00\u591c",

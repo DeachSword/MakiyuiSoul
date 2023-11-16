@@ -1041,6 +1041,38 @@
             "rarity": 0
         },
         {
+            "id": 801,
+            "name_chs": "\u7eef",
+            "name_chs_t": "\u7dcb",
+            "name_jp": "\u7dcb\u8272\u30dc\u30fc\u30ca\u30b9",
+            "name_en": "Crimson Bonus",
+            "name_kr": "\ubd89\uc740\uc0c9 \ubcf4\ub108\uc2a4",
+            "xuanshang": 1,
+            "yiman": 0,
+            "fan_menqing": 1,
+            "fan_fulu": 1,
+            "show_index": 801,
+            "sound": "",
+            "is_guyi": 0,
+            "rarity": 0
+        },
+        {
+            "id": 802,
+            "name_chs": "\u82cd",
+            "name_chs_t": "\u84bc",
+            "name_jp": "\u84bc\u8272\u30dc\u30fc\u30ca\u30b9",
+            "name_en": "Azure Bonus",
+            "name_kr": "\ud478\ub978\uc0c9 \ubcf4\ub108\uc2a4",
+            "xuanshang": 1,
+            "yiman": 0,
+            "fan_menqing": 1,
+            "fan_fulu": 1,
+            "show_index": 802,
+            "sound": "",
+            "is_guyi": 0,
+            "rarity": 0
+        },
+        {
             "id": 1000,
             "name_chs": "\u6839",
             "name_chs_t": "\u6839",
