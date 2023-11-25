@@ -1,7 +1,7 @@
 [daten]
 host_addr = "localhost"
 host_port = 8765
-game_url = "makiyuisoul.deachsword.com:443/test_game" # v0.10.274開始未使用, 需要自行補丁客戶端
+game_url = "localhost/test_game" # v0.10.274開始未使用, 需要自行補丁客戶端
 auto_create_account = true
 
 [database]
