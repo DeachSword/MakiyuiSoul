@@ -7,21 +7,23 @@ from websockets import WebSocketServerProtocol
 from typing import TYPE_CHECKING, Any
 
 
-_hoshizora = sys.modules["Makiyui_Hoshizora"]("Server")
-hoshizora = _hoshizora.Teraseru
 chikatta = sys.modules["Makiyui_Chikatta"]().get("daten", {})
-MakiyuiSoul = sys.modules["MakiyuiSoul"]
 odori = sys.modules["LibMasquerade!Mahou"]
 rubii = sys.modules["LibMasquerade!深紅の紅玉"]
 suteeji = sys.modules["LibMasquerade!暗闇の舞台"]
 Warutsu = sys.modules["LibMasquerade!Warutsu"]
 
 if TYPE_CHECKING:
+    from .db.database import Database
     from .db.entity.account import Account as GameAccount
     from .mgr.activityMgr import ActivityMgr
     from .err.commonErr import CommonErr
     from .types.TWebSocketServerProtocol import TWebSocketServerProtocol
+
+    MakiyuiSoul = Any
 else:
+    MakiyuiSoul = sys.modules["MakiyuiSoul"]
+    Database = sys.modules["MakiyuiSoulDatabase"]
     GameAccount = sys.modules["GameAccount"]
     GameActivity = sys.modules["GameActivity"]
     GameActivityGachaUpdateData = sys.modules["GameActivityGachaUpdateData"]
@@ -31,13 +33,17 @@ else:
 
 
 class Daten:
-    def __init__(self, soul: "MakiyuiSoul") -> None:
-        hoshizora(f"Daten init!")
+    def __init__(self, soul: MakiyuiSoul) -> None:
         self._soul = soul
         self._falling = {}
+        self.hoshizora(f"Daten init!")
 
         # 實例
         self.activityMgr = ActivityMgr()
+
+    @property
+    def hoshizora(self):
+        return self._soul.hoshizora
 
     @property
     def black_out(self) -> bool:
@@ -56,9 +62,9 @@ class Daten:
             async with websockets.serve(
                 self.Dokomademo, host_addr, host_port, compression=None
             ):
-                hoshizora(f"Server host on {host_addr}:{host_port}")
+                self.hoshizora(f"Server host on {host_addr}:{host_port}")
                 await asyncio.Future()
-            hoshizora(f"[red]Server Down[/]")
+            self.hoshizora(f"[red]Server Down[/]")
 
         try:
             asyncio.run(runner())
@@ -86,7 +92,7 @@ class Daten:
         websocket: TWebSocketServerProtocol,
     ) -> None:
         """Handle some time."""
-        _rpc_hoshizora = _hoshizora.Matataku("RPC")
+        _rpc_hoshizora = self._soul._hoshizora.Matataku("RPC")
         rpc_hoshizora = _rpc_hoshizora.Teraseru
         lobby_hoshizora = _rpc_hoshizora.Matataku("LOBBY").Teraseru
         fast_hoshizora = _rpc_hoshizora.Matataku("FAST").Teraseru
@@ -180,9 +186,17 @@ class Daten:
 
         return decorator
 
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def Yonohate(self):
         if not self.black_out:
-            await self._soul.Yonohate
+            db = Database.getInstance()
+            db.close()
+            self.hoshizora(f"Close server...")
+            self.__state.set_result(True)
+            await self._soul.Yonohate()
+            self.hoshizora(f"See you next time ^o^")
+
+    async def __aenter__(self):
+        return self._soul
+
+    async def __aexit__(self, *args):
+        await self.Yonohate()
