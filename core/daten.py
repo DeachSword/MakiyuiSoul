@@ -4,6 +4,7 @@ import sys
 import time
 import websockets
 from websockets import WebSocketServerProtocol
+from websockets.exceptions import ConnectionClosedError
 from typing import TYPE_CHECKING, Any
 
 
@@ -16,6 +17,7 @@ Warutsu = sys.modules["LibMasquerade!Warutsu"]
 if TYPE_CHECKING:
     from .db.database import Database
     from .db.entity.account import Account as GameAccount
+    from .mgr.playerMgr import PlayerMgr
     from .mgr.activityMgr import ActivityMgr
     from .err.commonErr import CommonErr
     from .types.TWebSocketServerProtocol import TWebSocketServerProtocol
@@ -27,6 +29,7 @@ else:
     GameAccount = sys.modules["GameAccount"]
     GameActivity = sys.modules["GameActivity"]
     GameActivityGachaUpdateData = sys.modules["GameActivityGachaUpdateData"]
+    PlayerMgr = sys.modules["MakiyuiSoulPlayerMgr"]
     ActivityMgr = sys.modules["MakiyuiSoulActivityMgr"]
     CommonErr = sys.modules["MakiyuiSoulCommonErr"]
     TWebSocketServerProtocol = Any
@@ -39,6 +42,7 @@ class Daten:
         self.hoshizora(f"Daten init!")
 
         # 實例
+        self.playerMgr = PlayerMgr()
         self.activityMgr = ActivityMgr()
 
     @property
@@ -51,9 +55,13 @@ class Daten:
 
     async def Dokomademo(self, websocket: WebSocketServerProtocol, path: str):
         websocket = suteeji.__init__(websocket)
-        async for message in websocket:
-            rpcName, rpcData, reqIdx = await odori.decodeData(message)
-            await self.Kyoukaisen(rpcName, rpcData, reqIdx, websocket)
+        try:
+            async for message in websocket:
+                rpcName, rpcData, reqIdx = await odori.decodeData(message)
+                await self.Kyoukaisen(rpcName, rpcData, reqIdx, websocket)
+            self.playerMgr.OnPlayerConnectionLost(websocket)
+        except ConnectionClosedError as e:
+            self.playerMgr.OnPlayerConnectionLost(websocket)
 
     def Mouhitokajiri(self) -> None:
         async def runner():
@@ -107,6 +115,7 @@ class Daten:
                     else:
                         account.genNewToken()
                         setattr(websocket, "GameAccount", account)
+                        self.playerMgr.OnPlayerLogin(account, websocket)
                         return await websocket.RespCommon(reqIdx, account.data())
                 else:
                     if chikatta.get("auto_create_account", False):
@@ -129,6 +138,7 @@ class Daten:
                 account = GameAccount.fromOauth2(access_token)
                 if account:
                     setattr(websocket, "GameAccount", account)
+                    self.playerMgr.OnPlayerLogin(account, websocket)
                     return await websocket.RespCommon(reqIdx, account.data())
                 return await websocket.RespErr(reqIdx, 109, 1)
             elif rpcName == ".lq.Lobby.fetchServerTime":
