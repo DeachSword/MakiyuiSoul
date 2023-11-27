@@ -58,6 +58,7 @@ impl_list = {
             "activity": {"gachaActivityMgr": [{"GachaActivityMgr": {}}]},
             "playerMgr": [{"PlayerMgr": {}}],
             "activityMgr": [{"ActivityMgr": {}}],
+            "scriptMgr": [{"ScriptMgr": {}}],
         },
         "daten": [{"Daten": {}}],
     },

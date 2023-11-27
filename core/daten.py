@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from .db.entity.account import Account as GameAccount
     from .mgr.playerMgr import PlayerMgr
     from .mgr.activityMgr import ActivityMgr
+    from .mgr.scriptMgr import ScriptMgr
     from .err.commonErr import CommonErr
     from .types.TWebSocketServerProtocol import TWebSocketServerProtocol
 
@@ -31,6 +32,7 @@ else:
     GameActivityGachaUpdateData = sys.modules["GameActivityGachaUpdateData"]
     PlayerMgr = sys.modules["MakiyuiSoulPlayerMgr"]
     ActivityMgr = sys.modules["MakiyuiSoulActivityMgr"]
+    ScriptMgr = sys.modules["MakiyuiSoulScriptMgr"]
     CommonErr = sys.modules["MakiyuiSoulCommonErr"]
     TWebSocketServerProtocol = Any
 
@@ -44,6 +46,7 @@ class Daten:
         # 實例
         self.playerMgr = PlayerMgr()
         self.activityMgr = ActivityMgr()
+        self.scriptMgr = ScriptMgr()
 
     @property
     def hoshizora(self):
