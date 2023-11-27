@@ -21,6 +21,11 @@ from rich.table import Table
 import rtoml
 
 
+if TYPE_CHECKING:
+    from ..core.utils.lua import unpacks_lua_table
+else:
+    unpacks_lua_table = sys.modules["MakiyuiSoulunpacks_lua_table"]
+
 console = Console()
 
 
@@ -35,6 +40,7 @@ class Hoshi:
     def Kagayaki(self) -> str:
         return f"{self.nido}[{self.ichido}]"
 
+    @unpacks_lua_table
     def Teraseru(self, setsuna: Any, **kwargs) -> None:
         """Log anything!"""
         if isinstance(setsuna, Exception):

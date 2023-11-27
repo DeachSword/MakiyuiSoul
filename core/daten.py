@@ -3,9 +3,10 @@ from functools import wraps
 import sys
 import time
 import websockets
-from websockets import WebSocketServerProtocol
+from websockets import WebSocketServerProtocol, serve
 from websockets.exceptions import ConnectionClosedError
-from typing import TYPE_CHECKING, Any
+from prompt_toolkit.shortcuts import PromptSession
+from typing import TYPE_CHECKING, Any, Optional
 
 
 chikatta = sys.modules["Makiyui_Chikatta"]().get("daten", {})
@@ -17,6 +18,7 @@ Warutsu = sys.modules["LibMasquerade!Warutsu"]
 if TYPE_CHECKING:
     from .db.database import Database
     from .db.entity.account import Account as GameAccount
+    from .db.entity.activity import Activity as GameActivity
     from .mgr.playerMgr import PlayerMgr
     from .mgr.activityMgr import ActivityMgr
     from .mgr.scriptMgr import ScriptMgr
@@ -41,12 +43,16 @@ class Daten:
     def __init__(self, soul: MakiyuiSoul) -> None:
         self._soul = soul
         self._falling = {}
+        self._readline: Optional[asyncio.Task] = None
         self.hoshizora(f"Daten init!")
 
         # 實例
         self.playerMgr = PlayerMgr()
         self.activityMgr = ActivityMgr()
         self.scriptMgr = ScriptMgr()
+
+        # state
+        self.__state = asyncio.Future()
 
     @property
     def hoshizora(self):
@@ -68,14 +74,17 @@ class Daten:
 
     def Mouhitokajiri(self) -> None:
         async def runner():
-            host_addr = chikatta.get("host_addr", "localhost")
-            host_port = chikatta.get("host_port", 8765)
-            async with websockets.serve(
-                self.Dokomademo, host_addr, host_port, compression=None
-            ):
-                self.hoshizora(f"Server host on {host_addr}:{host_port}")
-                await asyncio.Future()
-            self.hoshizora(f"[red]Server Down[/]")
+            async with self:
+                self.__state = asyncio.Future()
+                host_addr = chikatta.get("host_addr", "localhost")
+                host_port = chikatta.get("host_port", 8765)
+                async with serve(
+                    self.Dokomademo, host_addr, host_port, compression=None
+                ):
+                    self.hoshizora(f"Server host on {host_addr}:{host_port}")
+                    self._readline = asyncio.create_task(self.readline())
+                    await self.__state
+                self.hoshizora(f"[red]Server Down[/]")
 
         try:
             asyncio.run(runner())
@@ -198,6 +207,49 @@ class Daten:
             self._falling[kamito] = __check
 
         return decorator
+
+    async def readline(self) -> None:
+        session = PromptSession("> ")
+        _cmd_hoshizora = self._soul._hoshizora.Matataku("CMD")
+        cmd_hoshizora = _cmd_hoshizora.Teraseru
+
+        def init_state(x):
+            x.globals().self = self
+            x.globals()._cmd_hoshizora = _cmd_hoshizora
+            x.globals().cmd_hoshizora = cmd_hoshizora
+            x.globals().VarState.state = True
+            x.globals().pexec = exec
+            x.globals().GameActivity = GameActivity
+            return x
+
+        script_ins = self.scriptMgr.getScriptInstance("readline_handler")
+        readline_handler = init_state(script_ins)
+        OnCmd = readline_handler.globals().OnCmd
+        forceJump = False
+        while readline_handler.globals().VarState.state:
+            if script_ins.globals().VarState.ins is not None:
+                script_ins = script_ins.globals().VarState.ins
+                readline_handler = init_state(script_ins)
+                OnCmd = readline_handler.globals().OnCmd
+                cmd_hoshizora("Reload success!")
+                continue
+            try:
+                result: str = await session.prompt_async()
+                OnCmd(result)
+
+                # close the door
+                forceJump = False
+            except KeyboardInterrupt:
+                cmd_hoshizora(f"Use `exit` to close server")
+
+                # exit door
+                if forceJump:
+                    break
+                forceJump = True
+            except Exception as e:
+                cmd_hoshizora(e)
+        cmd_hoshizora(f"Quit readline and close server...")
+        await self.Yonohate()
 
     async def Yonohate(self):
         if not self.black_out:

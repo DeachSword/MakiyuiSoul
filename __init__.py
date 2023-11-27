@@ -30,6 +30,7 @@ impl_list = {
     },
     "core": {
         "err": {"commonErr": [{"CommonErr": {}}]},
+        "utils": {"lua": [{"unpacks_lua_table": {}}]},
         "setsunano_chikai": [
             {
                 "SetsunanoChikai": {
@@ -114,7 +115,7 @@ Warutsu = sys.modules["LibMasquerade!Warutsu"]
 
 # ORIGINAL LICENSE
 __copyright__ = "Copyright 2023 by DeachSword"
-__version__ = "1.1.12"
+__version__ = "1.1.16"
 __license__ = "BSD-3-Clause"
 __author__ = "YinMo0913"
 __url__ = "http://github.com/DeachSword"
