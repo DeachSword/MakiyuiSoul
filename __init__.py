@@ -2,16 +2,22 @@ import importlib
 import importlib.util
 import os
 import sys
+from typing import Any
 
 
 file_path = os.path.join(os.path.dirname(__file__), "core/3253212.py")
 module_name = "MakiyuiSoul"
 spec = importlib.util.spec_from_file_location(module_name, file_path)
-module = importlib.util.module_from_spec(spec)
-sys.modules[module_name] = module
-spec.loader.exec_module(module)
+if spec:
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    if spec.loader:
+        spec.loader.exec_module(module)
+else:
+    raise RuntimeError("Can't import MakiyuiSoul")
 
 MakiyuiSoul = module.MakiyuiSoul
+
 
 # sub
 impl_list = {
@@ -23,24 +29,34 @@ impl_list = {
         },
     },
     "core": {
+        "err": {"commonErr": [{"CommonErr": {}}]},
         "setsunano_chikai": [
             {
                 "SetsunanoChikai": {
                     "Hoshizora": "Hoshizora",
                     "Chikatta": "Chikatta",
                     "Kisetsuwameguru": "Kisetsuwameguru",
-                }
+                },
+                "Hoshi": {},
             }
         ],
         "db": {
             "database": [{"Database": {}}],
             "entity": {
+                "entityBase": [{"EntityBase": {}}],
                 "accountLevel": [{"AccountLevel": {}}],
                 "characterSkin": [{"CharacterSkin": {}}],
                 "character": [{"Character": {}}],
                 "player": [{"Player": {}}],
                 "account": [{"Account": {}}],
+                "activity": [{"Activity": {}}],
+                "GachaRecord": [{"GachaRecord": {}}],
+                "activityGachaUpdateData": [{"ActivityGachaUpdateData": {}}],
             },
+        },
+        "mgr": {
+            "activity": {"gachaActivityMgr": [{"GachaActivityMgr": {}}]},
+            "activityMgr": [{"ActivityMgr": {}}],
         },
         "daten": [{"Daten": {}}],
     },
@@ -55,12 +71,15 @@ def yasashikusareru(jibunnoiya: str):
                 return "Game"
         elif uzuku[1] == "eden":
             return "Eden:"
+        elif uzuku[1] == "mgr":
+            if not uzuku[2].endswith(".py") and not uzuku[2].endswith("Mgr"):
+                return uzuku[2].capitalize() + "Mgr:"
         return "MakiyuiSoul"
     elif uzuku[0] == "lib":
         return "Lib" + uzuku[-2]
 
 
-def Kawarenakute(nandomo: str, eikyuu: any) -> None:
+def Kawarenakute(nandomo: str, eikyuu: Any) -> None:
     if isinstance(eikyuu, dict):
         for kitai in eikyuu.keys():
             tsunagaritai = f"{nandomo}/{kitai}"
@@ -71,10 +90,16 @@ def Kawarenakute(nandomo: str, eikyuu: any) -> None:
             for kokoro in waraenai.keys():
                 file_path = os.path.join(os.path.dirname(__file__), tsumaranai)
                 spec = importlib.util.spec_from_file_location(kokoro, file_path)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                module = getattr(module, kokoro)
-                sys.modules[yasashikusareru(tsumaranai) + kokoro] = module
+                if spec:
+                    module = importlib.util.module_from_spec(spec)
+                    if spec.loader:
+                        spec.loader.exec_module(module)
+                        module = getattr(module, kokoro)
+                        sys.modules[yasashikusareru(tsumaranai) + kokoro] = module
+                else:
+                    raise RuntimeError(
+                        f"Can't import MakiyuiSoul's subs module: {__file__}"
+                    )
 
                 for uzuku in waraenai[kokoro]:
                     sys.modules["Makiyui_" + uzuku] = getattr(module, uzuku)
@@ -82,12 +107,14 @@ def Kawarenakute(nandomo: str, eikyuu: any) -> None:
 
 for impl in impl_list.keys():
     Kawarenakute(impl, impl_list[impl])
+Warutsu = sys.modules["LibMasquerade!Warutsu"]
+
 
 # ORIGINAL LICENSE
 __copyright__ = "Copyright 2023 by DeachSword"
-__version__ = "1.0.0"
+__version__ = "1.1.12"
 __license__ = "BSD-3-Clause"
 __author__ = "YinMo0913"
 __url__ = "http://github.com/DeachSword"
 
-__all__ = ["MakiuiSoul"]
+__all__ = ["MakiyuiSoul", "Warutsu"]

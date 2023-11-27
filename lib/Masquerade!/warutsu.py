@@ -28,7 +28,7 @@ class Warutsu:
     def body(self):
         d = []
         if self._ttype == 0:
-            if self._data == '':
+            if self._data == "":
                 raise ValueError(f"Got empty string: {self}")
             d += self.__mahou.writeVarint(self._data, self._zzBits)
         elif self._ttype == 2:

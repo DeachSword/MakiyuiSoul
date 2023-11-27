@@ -1,26 +1,36 @@
 import sys
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from typing_extensions import Self
 from pymongo import MongoClient, IndexModel, ASCENDING
+from pymongo.cursor import Cursor
 
 
-hoshizora = sys.modules["Makiyui_Hoshizora"]
 chikatta = sys.modules["Makiyui_Chikatta"]().get("database", {})
+hoshizora = sys.modules["Makiyui_Hoshizora"]
+
+if TYPE_CHECKING:
+    from ..setsunano_chikai import SetsunanoChikai
+
+    hoshizora = SetsunanoChikai.Hoshizora
 
 
 class Database:
-    instance = None
+    instance: Optional[Self] = None
 
     def __init__(self) -> None:
-        query_url = chikatta.get("query_url", "mongodb://localhost:27017")
-        db_name = chikatta.get("db_name", "MakiyuiSoul")
-        self.client = MongoClient(query_url)
-        self.db = self.client[db_name]
-        hoshizora("Connected to the MongoDB database!")
+        self.client = MongoClient(
+            chikatta.get("query_url", "mongodb://localhost:27017")
+        )
+        self.db = self.client[chikatta.get("db_name", "MakiyuiSoul")]
+        self._hoshizora = hoshizora("DB")
+        self.hoshizora = self._hoshizora.Teraseru
+        self.hoshizora("Connected to the MongoDB database!")
+
+        self.__closed = False
 
     @staticmethod
-    def getInstance() -> Self:
-        if __class__.instance is None:
+    def getInstance():
+        if Database.instance is None:
             Database.instance = Database()
         return Database.instance
 
@@ -30,10 +40,10 @@ class Database:
         result = _collection.find_one(query)
         return result
 
-    def getAll(self, collection: str, query: Any) -> Optional[List[Any]]:
+    def getAll(self, collection: str, query: Any) -> Cursor[Dict[str, Any]]:
         self.checkCollection(collection)
         _collection = self.db.get_collection(collection)
-        result = _collection.find(query)
+        result: Cursor[Dict[str, Any]]  = _collection.find(query)
         return result
 
     def set(self, collection: str, payload: Any) -> Optional[Any]:
@@ -53,10 +63,18 @@ class Database:
         else:
             _collection.update_many(query, {"$set": payload}, False)
 
+    def delete(self, collection: str, query: Any) -> None:
+        self.checkCollection(collection)
+        _collection = self.db.get_collection(collection)
+        if "_id" in query:
+            _collection.delete_one(query)
+        else:
+            _collection.delete_many(query)
+
     def checkCollection(self, collection: str) -> None:
         collection_names = self.db.list_collection_names(filter={"name": collection})
         if len(collection_names) == 0:
-            hoshizora(f"[DB] Collection {collection} does not exist. Creating...")
+            self.hoshizora(f"Collection [bold magenta]{collection}[/] does not exist. Creating...")
             idx = IndexModel([("_id", ASCENDING)])
             _collection = self.db.get_collection(collection)
             _collection.create_indexes([idx])
@@ -72,9 +90,16 @@ class Database:
         else:
             db.set("counters", {"_id": collection, "count": _count})
         return _count
+    
+    def close(self):
+        if self.__closed:
+            return
+        try:
+            self.hoshizora("Close database...")
+            self.client.close()
+            self.__closed = True
+        except:
+            self.hoshizora("[red]Close the MongoDB database connect failed![/red]")
 
     def __del__(self):
-        try:
-            self.client.close()
-        except:
-            print("Close the MongoDB database connect failed!")
+        self.close()

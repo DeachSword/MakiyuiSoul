@@ -8,16 +8,19 @@ import ctypes
 import io
 from struct import pack, unpack
 import sys
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
-Warutsu = sys.modules["LibMasquerade!Warutsu"]
+if TYPE_CHECKING:
+    from .warutsu import Warutsu
+else:
+    Warutsu = sys.modules["LibMasquerade!Warutsu"]
 
 
 class Mahou:
     @staticmethod
     async def encodeData(
-        reqIdx: int,
-        payload: any = None,
+        reqIdx: Optional[int],
+        payload: Any = None,
         respType: int = 3,
         rpcName: Optional[str] = None,
     ) -> bytes:
@@ -29,9 +32,9 @@ class Mahou:
         if rpcName is None:
             data += [0]  # empty name
         else:
-            rpcName = rpcName.encode()
-            data += __class__.writeVarint(len(rpcName))
-            data += list(rpcName)
+            bRpcName = rpcName.encode()
+            data += __class__.writeVarint(len(bRpcName))
+            data += list(bRpcName)
         data += [18]
         if payload is None:
             data += [0]  # empty payload
@@ -61,7 +64,7 @@ class Mahou:
 
     @staticmethod
     def readProto(
-        data: bytes, data_dict: dict = None, tryDecodrGroupData: bool = False
+        data: bytes, data_dict: Optional[dict] = None, tryDecodrGroupData: bool = False
     ):
         """Read protobuf."""
         reader = io.BytesIO(data)
@@ -84,10 +87,9 @@ class Mahou:
             _data = reader.read(ls)
             try:
                 # maybe utf8 string
-                org_data = _data
-                _data = _data.decode()
-                if len(_data) != len(org_data):
-                    _data = org_data
+                _str = _data.decode()
+                if len(_str) == len(_data):
+                    _data = _str
             except:
                 # maybe field?
                 if tryDecodrGroupData:

@@ -4,10 +4,11 @@ import sys
 import time
 import websockets
 from websockets import WebSocketServerProtocol
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 
-hoshizora = sys.modules["Makiyui_Hoshizora"]
+_hoshizora = sys.modules["Makiyui_Hoshizora"]("Server")
+hoshizora = _hoshizora.Teraseru
 chikatta = sys.modules["Makiyui_Chikatta"]().get("daten", {})
 MakiyuiSoul = sys.modules["MakiyuiSoul"]
 odori = sys.modules["LibMasquerade!Mahou"]
@@ -17,8 +18,16 @@ Warutsu = sys.modules["LibMasquerade!Warutsu"]
 
 if TYPE_CHECKING:
     from .db.entity.account import Account as GameAccount
+    from .mgr.activityMgr import ActivityMgr
+    from .err.commonErr import CommonErr
+    from .types.TWebSocketServerProtocol import TWebSocketServerProtocol
 else:
     GameAccount = sys.modules["GameAccount"]
+    GameActivity = sys.modules["GameActivity"]
+    GameActivityGachaUpdateData = sys.modules["GameActivityGachaUpdateData"]
+    ActivityMgr = sys.modules["MakiyuiSoulActivityMgr"]
+    CommonErr = sys.modules["MakiyuiSoulCommonErr"]
+    TWebSocketServerProtocol = Any
 
 
 class Daten:
@@ -26,6 +35,9 @@ class Daten:
         hoshizora(f"Daten init!")
         self._soul = soul
         self._falling = {}
+
+        # 實例
+        self.activityMgr = ActivityMgr()
 
     @property
     def black_out(self) -> bool:
@@ -46,6 +58,7 @@ class Daten:
             ):
                 hoshizora(f"Server host on {host_addr}:{host_port}")
                 await asyncio.Future()
+            hoshizora(f"[red]Server Down[/]")
 
         try:
             asyncio.run(runner())
@@ -70,81 +83,92 @@ class Daten:
         rpcName: str,
         rpcData: dict,
         reqIdx: int,
-        websocket: WebSocketServerProtocol,
+        websocket: TWebSocketServerProtocol,
     ) -> None:
         """Handle some time."""
-        if rpcName == ".lq.Lobby.login":
-            username = rpcData[1]
-            pwd = rpcData[2]
-            if GameAccount.checkUsername(username):
-                account = GameAccount.fromLogin(username, pwd)
-                if account is None:
-                    return await websocket.RespErr(reqIdx, 1003, 1)  # 密碼錯誤
+        _rpc_hoshizora = _hoshizora.Matataku("RPC")
+        rpc_hoshizora = _rpc_hoshizora.Teraseru
+        lobby_hoshizora = _rpc_hoshizora.Matataku("LOBBY").Teraseru
+        fast_hoshizora = _rpc_hoshizora.Matataku("FAST").Teraseru
+        try:
+            if rpcName == ".lq.Lobby.login":
+                username = rpcData[1]
+                pwd = rpcData[2]
+                if GameAccount.checkUsername(username):
+                    account = GameAccount.fromLogin(username, pwd)
+                    if account is None:
+                        return await websocket.RespErr(reqIdx, 1003, 1)  # 密碼錯誤
+                    else:
+                        account.genNewToken()
+                        setattr(websocket, "GameAccount", account)
+                        return await websocket.RespCommon(reqIdx, account.data())
                 else:
-                    account.genNewToken()
+                    if chikatta.get("auto_create_account", False):
+                        # create account
+                        account = GameAccount.create(username, pwd)
+                        setattr(websocket, "GameAccount", account)
+                        return await websocket.RespCommon(reqIdx, account.data())
+                    else:
+                        return await websocket.RespErr(reqIdx, 1002, 1)
+            elif rpcName == ".lq.Lobby.signup":
+                return await websocket.RespErr(reqIdx, 1003, 1)
+            elif rpcName == ".lq.Lobby.oauth2Check":
+                access_token = rpcData[2]
+                account = GameAccount.fromOauth2(access_token)
+                if account:
+                    return await websocket.RespCommon(reqIdx, Warutsu(2, 0, 1))
+                return await websocket.RespErr(reqIdx, 109, 1)
+            elif rpcName == ".lq.Lobby.oauth2Login":
+                access_token = rpcData[2]
+                account = GameAccount.fromOauth2(access_token)
+                if account:
                     setattr(websocket, "GameAccount", account)
                     return await websocket.RespCommon(reqIdx, account.data())
-            else:
-                if chikatta.get("auto_create_account", False):
-                    # create account
-                    account = GameAccount.create(username, pwd)
-                    setattr(websocket, "GameAccount", account)
-                    return await websocket.RespCommon(reqIdx, account.data())
+                return await websocket.RespErr(reqIdx, 109, 1)
+            elif rpcName == ".lq.Lobby.fetchServerTime":
+                ResServerTime = [Warutsu(1, 0, int(time.time()))]
+                return await websocket.RespCommon(reqIdx, ResServerTime)
+            elif rpcName == ".lq.Lobby.fetchCharacterInfo":
+                account = getattr(websocket, "GameAccount")
+                if account is not None:
+                    player = account.player
+                    ResCharacterInfo = [
+                        Warutsu(4, 0, player.character_id),
+                    ]
+                    for character in player.getCharacters(True):
+                        ResCharacterInfo.append(Warutsu(2, 2, character))
+                    for skinId in player.getCharacterSkins():
+                        ResCharacterInfo.append(Warutsu(3, 0, skinId))
+                    return await websocket.RespCommon(reqIdx, ResCharacterInfo)
+                return await websocket.RespErr(reqIdx, 1002, 1)
+            elif rpcName == ".lq.Lobby.changeMainCharacter":
+                character_id = rpcData[1]
+                account: GameAccount = getattr(websocket, "GameAccount")
+                if account is not None:
+                    errCode = account.player.changeMainCharacter(character_id)
+                    if errCode > 0:
+                        return await websocket.RespErr(reqIdx, errCode, 1)
                 else:
                     return await websocket.RespErr(reqIdx, 1002, 1)
-        elif rpcName == ".lq.Lobby.signup":
-            return await websocket.RespErr(reqIdx, 1003, 1)
-        elif rpcName == ".lq.Lobby.oauth2Check":
-            access_token = rpcData[2]
-            account = GameAccount.fromOauth2(access_token)
-            if account:
-                return await websocket.RespCommon(reqIdx, Warutsu(2, 0, 1))
-            return await websocket.RespErr(reqIdx, 109, 1)
-        elif rpcName == ".lq.Lobby.oauth2Login":
-            access_token = rpcData[2]
-            account = GameAccount.fromOauth2(access_token)
-            if account:
-                setattr(websocket, "GameAccount", account)
-                return await websocket.RespCommon(reqIdx, account.data())
-            return await websocket.RespErr(reqIdx, 109, 1)
-        elif rpcName == ".lq.Lobby.fetchServerTime":
-            ResServerTime = [Warutsu(1, 0, int(time.time()))]
-            return await websocket.RespCommon(reqIdx, ResServerTime)
-        elif rpcName == ".lq.Lobby.fetchCharacterInfo":
-            account = getattr(websocket, "GameAccount")
-            if account is not None:
-                player = account.player
-                ResCharacterInfo = [
-                    Warutsu(4, 0, player.character_id),
-                ]
-                for character in player.getCharacters(True):
-                    ResCharacterInfo.append(Warutsu(2, 2, character))
-                for skinId in player.getCharacterSkins():
-                    ResCharacterInfo.append(Warutsu(3, 0, skinId))
-                return await websocket.RespCommon(reqIdx, ResCharacterInfo)
-            return await websocket.RespErr(reqIdx, 1002, 1)
-        elif rpcName == ".lq.Lobby.changeMainCharacter":
-            character_id = rpcData[1]
-            account: GameAccount = getattr(websocket, "GameAccount")
-            if account is not None:
-                errCode = account.player.changeMainCharacter(character_id)
-                if errCode > 0:
-                    return await websocket.RespErr(reqIdx, errCode, 1)
+            elif rpcName == ".lq.Lobby.changeCharacterSkin":
+                character_id = rpcData[1]
+                skin = rpcData[2]
+                account = getattr(websocket, "GameAccount")
+                if account is not None:
+                    errCode = account.player.changeCharacterSkin(character_id, skin)
+                    if errCode > 0:
+                        return await websocket.RespErr(reqIdx, errCode, 1)
+                else:
+                    return await websocket.RespErr(reqIdx, 1002, 1)
             else:
-                return await websocket.RespErr(reqIdx, 1002, 1)
-        elif rpcName == ".lq.Lobby.changeCharacterSkin":
-            character_id = rpcData[1]
-            skin = rpcData[2]
-            account = getattr(websocket, "GameAccount")
-            if account is not None:
-                errCode = account.player.changeCharacterSkin(character_id, skin)
-                if errCode > 0:
-                    return await websocket.RespErr(reqIdx, errCode, 1)
-            else:
-                return await websocket.RespErr(reqIdx, 1002, 1)
-        else:
-            hoshizora(f"[RPC] no handle on {rpcName}")
-            return await websocket.RespCommon(reqIdx)
+                rpc_hoshizora(
+                    f"no handle on [red]{rpcName}[/], payload: [green]{rpcData}[/]"
+                )
+                return await websocket.RespCommon(reqIdx)
+        except CommonErr as e:
+            return await websocket.RespErr(reqIdx, e.code, e.fid)
+        except Exception as e:
+            rpc_hoshizora(e)
 
     def Okotte(self, kamito: str, hinano: any = None) -> None:
         def decorator(func):

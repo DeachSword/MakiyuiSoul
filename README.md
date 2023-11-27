@@ -13,7 +13,7 @@ Welcome join our [Discord](https://discord.gg/vQrMbjA)
 - [x] Login / Oauth2
 - [x] Characters
 - [x] Skins
-- [ ] Activitys
+- [x] Activitys
 - [ ] Multi Game
 - [ ] Custom Game
 - [ ] Gachas

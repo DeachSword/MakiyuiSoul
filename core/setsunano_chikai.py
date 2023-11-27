@@ -12,19 +12,68 @@
 """
 import json
 import os
+import sys
+from typing import TYPE_CHECKING, Any, Optional
+from typing_extensions import Self
 from rich.console import Console
+from rich.markup import escape
+from rich.table import Table
 import rtoml
 
 
 console = Console()
 
-class SetsunanoChikai():
+
+class Hoshi:
+    def __init__(self, ichido: str, nido: Optional[str] = None) -> None:
+        self.ichido = ichido
+        self.nido = ""
+        if nido is not None:
+            self.nido = nido
+
+    @property
+    def Kagayaki(self) -> str:
+        return f"{self.nido}[{self.ichido}]"
+
+    def Teraseru(self, setsuna: Any, **kwargs) -> None:
+        """Log anything!"""
+        if isinstance(setsuna, Exception):
+            console.print_exception(show_locals=True)
+        else:
+            debugOnly: bool = kwargs.get("debug", False)
+            table_data = kwargs.get("table")
+            if table_data is not None:
+                table = Table()
+                for i in table_data.get("head", {}).values():
+                    table.add_column(str(i), style="bold")
+
+                for _, v in table_data.get("rows", {}).items():
+                    row = []
+                    for r in v.values():
+                        row.append(str(r))
+                    table.add_row(*row)
+
+                console.log(table)
+            else:
+                if debugOnly:
+                    setsuna = f"[on wheat4 blink]{setsuna}[/]"
+                console.log(
+                    f"[bold blue reverse]{escape(self.Kagayaki)}[/] {setsuna}",
+                    style="white",
+                )
+
+    def Matataku(self, ichido: str) -> Self:
+        """Overload the name"""
+        return Hoshi(ichido, self.Kagayaki)
+
+
+class SetsunanoChikai:
     Kisetsu = {}
 
     @staticmethod
-    def Hoshizora(chikatta: any, **kargs) -> None:
-        """Log anything!"""
-        console.log(f"{chikatta}")
+    def Hoshizora(ichido: str) -> Hoshi:
+        """Get logger."""
+        return Hoshi(ichido)
 
     @staticmethod
     def Chikatta() -> dict:
@@ -37,7 +86,9 @@ class SetsunanoChikai():
     def Kisetsuwameguru(kisetsu: str) -> dict:
         """Get game config."""
         if kisetsu not in __class__.Kisetsu:
-            file_path = os.path.join(os.path.dirname(__file__), f"../ss/dumps/{kisetsu}.json")
+            file_path = os.path.join(
+                os.path.dirname(__file__), f"../ss/dumps/{kisetsu}.json"
+            )
             with open(file_path) as file:
                 __class__.Kisetsu[kisetsu] = json.load(file)
         return __class__.Kisetsu[kisetsu]
