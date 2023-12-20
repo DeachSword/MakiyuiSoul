@@ -649,6 +649,24 @@
             "type": "event"
         },
         {
+            "id": 10001,
+            "path": "audio/audio_event/2312winter_combine",
+            "time_length": 0,
+            "type": "event"
+        },
+        {
+            "id": 10002,
+            "path": "audio/audio_event/2312winter_delivery",
+            "time_length": 0,
+            "type": "event"
+        },
+        {
+            "id": 10003,
+            "path": "audio/audio_event/2312winter_new",
+            "time_length": 0,
+            "type": "event"
+        },
+        {
             "id": 305032,
             "path": "audio/audio_mj/effect_liqi_canying",
             "time_length": 1151614976,
@@ -853,6 +871,12 @@
             "type": "effect"
         },
         {
+            "id": 30520002,
+            "path": "audio/audio_mj/ron_23winter",
+            "time_length": 0,
+            "type": "effect"
+        },
+        {
             "id": 305224,
             "path": "audio/audio_mj/ron_23ex_heidong",
             "time_length": 0,
@@ -1035,6 +1059,12 @@
         {
             "id": 30530001,
             "path": "audio/audio_mj/effect_liqi_23wansheng",
+            "time_length": 0,
+            "type": "effect"
+        },
+        {
+            "id": 30530002,
+            "path": "audio/audio_mj/effect_liqi_23winter",
             "time_length": 0,
             "type": "effect"
         },
